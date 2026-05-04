@@ -1,74 +1,91 @@
 local M = {}
 
-local en_to_cn = {
-	["Find File"] = "查找文件",
-	["New File"] = "新建文件",
-	["Projects"] = "项目",
-	["Find Text"] = "查找文本",
-	["Recent Files"] = "最近文件",
-	["Config"] = "配置",
-	["Restore Session"] = "恢复会话",
-	["Lazy Extras"] = "Lazy 扩展",
-	["Lazy"] = "Lazy",
-	["Quit"] = "退出",
-}
+local wk_ok, wk = pcall(require, "which-key")
+local translate = require("lazyvim_chinese.translate")
+local dashboard = require("lazyvim_chinese.dashboard")
 
-local cn_to_en = {}
-for k, v in pairs(en_to_cn) do
-	cn_to_en[v] = k
+local enabled = false
+
+local function apply(trans_map, mode)
+    if not wk_ok then
+        return
+    end
+    local regs = {}
+    for lhs, name in pairs(trans_map) do
+        -- 核心修复：使用 desc 而不是 group
+        -- 同时将 mode 直接放入每个条目中，符合 v3 规范
+        table.insert(regs, { lhs, desc = name, mode = mode or "n" })
+    end
+    -- v3 规范：直接传入 table，不需要第二个参数
+    wk.add(regs)
 end
 
-local function apply_alpha(map)
-	local ok, dashboard = pcall(require, "alpha.themes.dashboard")
-	if not ok then
-		return false
-	end
-	local buttons = dashboard.section and dashboard.section.buttons and dashboard.section.buttons.val or {}
-	for _, btn in ipairs(buttons) do
-		local val = btn.val
-		if map[val] then
-			btn.val = map[val]
-		end
-	end
-	local ok2, alpha = pcall(require, "alpha")
-	if ok2 and alpha.redraw then
-		alpha.redraw()
-	else
-		local ok3, dash = pcall(require, "alpha")
-		if ok3 and dash.setup and dashboard.opts then
-			dash.setup(dashboard.opts)
-		end
-	end
-	return true
+function M.enable()
+    if enabled then
+        return
+    end
+    enabled = true
+    -- 只有当 which-key 加载后才执行，防止启动时崩溃
+    if wk_ok then
+        apply(translate.cn)
+        apply(translate.cn_v, "v")
+    end
+    dashboard.apply(true)
 end
 
-local function apply_snacks(map)
-	local ok, snacks = pcall(require, "snacks")
-	if not ok or not snacks.config or not snacks.config.dashboard or not snacks.config.dashboard.preset then
-		return false
-	end
-	local keys = snacks.config.dashboard.preset.keys or {}
-	for _, item in ipairs(keys) do
-		local d = item.desc
-		if d and map[d] then
-			item.desc = map[d]
-		end
-	end
-	local ok2, sd = pcall(require, "snacks.dashboard")
-	if ok2 then
-		pcall(function()
-			sd()
-		end)
-	end
-	return true
+function M.disable()
+    if not enabled then
+        return
+    end
+    enabled = false
+    if wk_ok then
+        apply(translate.en)
+        apply(translate.en_v, "v")
+    end
+    dashboard.apply(false)
 end
 
-function M.apply(cn)
-	local map = cn and en_to_cn or cn_to_en
-	local done = apply_snacks(map)
-	if not done then
-		apply_alpha(map)
-	end
+function M.toggle()
+    if enabled then
+        M.disable()
+    else
+        M.enable()
+    end
+end
+
+function M.setup()
+    -- 设置切换快捷键
+    vim.keymap.set(
+        "n",
+        "<leader>uC",
+        function()
+            require("lazyvim_chinese").toggle()
+        end,
+        { desc = "菜单汉化切换" }
+    )
+
+    -- 初始启用
+    M.enable()
+
+    -- 确保在 VeryLazy 阶段重新应用，以覆盖插件定义的英文描述
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "VeryLazy",
+        callback = function()
+            -- 重新获取一次 wk，确保 VeryLazy 时它已加载
+            wk_ok, wk = pcall(require, "which-key")
+            if enabled then
+                apply(translate.cn)
+                apply(translate.cn_v, "v")
+            end
+        end,
+    })
+
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "AlphaReady",
+        callback = function()
+            dashboard.apply(enabled)
+        end,
+    })
 end
 
 return M
