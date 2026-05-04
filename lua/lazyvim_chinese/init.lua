@@ -7,14 +7,14 @@ local dashboard = require("lazyvim_chinese.dashboard")
 local enabled = false
 
 local function apply(trans_map, mode)
-	if not wk_ok then
-		return
-	end
-	local regs = {}
-	for lhs, name in pairs(trans_map) do
-		regs[lhs] = { name = name }
-	end
-	wk.register(regs, { mode = mode or "n" })
+  if not wk_ok then
+    return
+  end
+  local regs = {}
+  for lhs, name in pairs(trans_map) do
+    table.insert(regs, { lhs, group = name })
+  end
+  wk.add(regs, { mode = mode or "n" })
 end
 
 function M.enable()
