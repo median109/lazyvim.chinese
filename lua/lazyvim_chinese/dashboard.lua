@@ -1,18 +1,23 @@
 local M = {}
 
 -- 这里定义 Dashboard 上的按钮翻译
-M.button_map = {
-  ["Find File"] = "查找文件",
-  ["Recent Files"] = "最近文件",
-  ["Config"] = "配置",
-  ["Restore Session"] = "恢复会话",
-  ["Projects"] = "项目",
-  ["Lazy"] = "插件管理",
-  ["Quit"] = "退出",
-  -- 适配新版 Snacks Dashboard
-  ["Explore"] = "文件浏览",
-  ["Grep Text"] = "全文检索",
+local en_to_cn = {
+	["Find File"] = "查找文件",
+	["New File"] = "新建文件",
+	["Projects"] = "项目",
+	["Find Text"] = "查找文本",
+	["Recent Files"] = "最近文件",
+	["Config"] = "配置",
+	["Restore Session"] = "恢复会话",
+	["Lazy Extras"] = "Lazy 扩展",
+	["Lazy"] = "Lazy",
+	["Quit"] = "退出",
 }
+
+local cn_to_en = {}
+for k, v in pairs(en_to_cn) do
+	cn_to_en[v] = k
+end
 
 function M.apply(is_chinese)
   -- 尝试获取 Alpha 仪表盘
