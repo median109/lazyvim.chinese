@@ -1,52 +1,53 @@
 local M = {}
 
--- 统一管理按钮翻译表
-M.en_to_cn = {
-    ["Find File"] = "查找文件",
-    ["New File"] = "新建文件",
-    ["Projects"] = "项目",
-    ["Find Text"] = "查找文本",
-    ["Grep Text"] = "全文检索",
-    ["Recent Files"] = "最近文件",
-    ["Config"] = "配置",
-    ["Restore Session"] = "恢复会话",
-    ["Lazy Extras"] = "Lazy 扩展",
-    ["Lazy"] = "插件管理",
-    ["Quit"] = "退出",
-    ["Explore"] = "文件浏览",
+-- 按钮配置模板
+M.buttons = {
+  zh = {
+    { icon = " ", key = "f", desc = "查找文件", action = ":lua Snacks.dashboard.pick('files')" },
+    { icon = " ", key = "n", desc = "新建文件", action = ":ene | startinsert" },
+    { icon = " ", key = "g", desc = "查找文本", action = ":lua Snacks.dashboard.pick('live_grep')" },
+    { icon = " ", key = "r", desc = "最近文件", action = ":lua Snacks.dashboard.pick('oldfiles')" },
+    { icon = " ", key = "c", desc = "配置文件", action = ":lua Snacks.dashboard.pick('files', { cwd = vim.fn.stdpath('config') })" },
+    { icon = " ", key = "s", desc = "恢复会话", section = "session" },
+    { icon = "󰒲 ", key = "L", desc = "插件管理", action = ":Lazy" },
+    { icon = " ", key = "q", desc = "退    出", action = ":qa" },
+  },
+  en = {
+    { icon = " ", key = "f", desc = "Find File", action = ":lua Snacks.dashboard.pick('files')" },
+    { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },
+    { icon = " ", key = "g", desc = "Grep Text", action = ":lua Snacks.dashboard.pick('live_grep')" },
+    { icon = " ", key = "r", desc = "Recent", action = ":lua Snacks.dashboard.pick('oldfiles')" },
+    { icon = " ", key = "c", desc = "Config", action = ":lua Snacks.dashboard.pick('files', { cwd = vim.fn.stdpath('config') })" },
+    { icon = " ", key = "s", desc = "Restore Session", section = "session" },
+    { icon = "󰒲 ", key = "L", desc = "Lazy", action = ":Lazy" },
+    { icon = " ", key = "q", desc = "Quit", action = ":qa" },
+  }
 }
 
--- 自动生成反向表
-M.cn_to_en = {}
-for k, v in pairs(M.en_to_cn) do
-    M.cn_to_en[v] = k
-end
-
 function M.apply(is_chinese)
-    -- 1. 适配 Alpha 仪表盘
-    local status_alpha, alpha = pcall(require, "alpha")
-    if status_alpha then
-        local dashboard = require("alpha.themes.dashboard")
-        for _, button in ipairs(dashboard.section.buttons.val) do
-            local map = is_chinese and M.en_to_cn or M.cn_to_en
-            for target, replacement in pairs(map) do
-                -- 使用 plain matching 防止特殊字符干扰
-                if button.val:find(target, 1, true) then
-                    button.val = button.val:gsub(target, replacement)
-                end
-            end
-        end
-        pcall(vim.cmd, "AlphaRedraw")
+  -- 1. 处理新版 Snacks Dashboard
+  local status_snacks, snacks = pcall(require, "snacks")
+  if status_snacks then
+    -- 直接修改 Snacks 的配置选项
+    local lang = is_chinese and "zh" or "en"
+    if snacks.config and snacks.config.dashboard then
+      snacks.config.dashboard.preset = snacks.config.dashboard.preset or {}
+      snacks.config.dashboard.preset.keys = M.buttons[lang]
+      
+      -- 如果当前已经在 Dashboard 页面，刷新它
+      if vim.bo.filetype == "snacks_dashboard" then
+        pcall(require("snacks.dashboard").open)
+      end
     end
+  end
 
-    -- 2. 适配 Snacks Dashboard (LazyVim V14+ 默认)
-    -- 注意：Snacks 的仪表盘是动态渲染的，如果它没汉化，
-    -- 通常是因为它直接读取了 snacks.dashboard.config
-    local status_snacks, _ = pcall(require, "snacks")
-    if status_snacks and is_chinese then
-        -- 这里可以添加针对 Snacks 的特定 Hook，
-        -- 但目前最稳妥的是在 Alpha/Dashboard 层面完成替换
-    end
+  -- 2. 处理旧版 Alpha (保留兼容性)
+  local status_alpha, alpha = pcall(require, "alpha")
+  if status_alpha then
+    local alpha_dashboard = require("alpha.themes.dashboard")
+    -- 这里可以使用之前的 gsub 逻辑，或者直接重写 buttons
+    pcall(vim.cmd, "AlphaRedraw")
+  end
 end
 
 return M
