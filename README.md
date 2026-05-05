@@ -1,8 +1,8 @@
 # lazyvim.chinese
 
-LazyVim 菜单汉化插件
-修改自 https://github.com/xuxiaowei-com-cn/lazyvim.chinese
-补全了汉化
+- LazyVim 菜单汉化插件
+- 修改自 https://github.com/xuxiaowei-com-cn/lazyvim.chinese
+- 补全了汉化
 
 ## 功能
 
