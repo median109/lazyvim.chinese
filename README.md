@@ -15,7 +15,9 @@
 
 ```lua
 {
-  "xuxiaowei-com-cn/lazyvim.chinese",
+    -- 这一行告诉 lazy.nvim 去 GitHub 下载这个插件
+  "median109/lazyvim.chinese",
+    -- config 函数会在插件下载并加载后自动运行
   config = function()
     require("lazyvim_chinese").setup()
   end,
